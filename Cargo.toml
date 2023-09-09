@@ -1,3 +1,6 @@
+# Copyright (c) Team CharLS.
+# SPDX-License-Identifier: BSD-3-Clause
+
 [package]
 name = "charls-rs" # TODO: Identify a good package name
 version = "0.1.0"

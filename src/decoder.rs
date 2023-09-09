@@ -1,3 +1,6 @@
+// Copyright (c) Team CharLS.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use std::io::{Read, self};
 
 #[warn(unused_variables)]
