@@ -5,13 +5,7 @@ use std::io::{Read, self};
 
 #[warn(unused_variables)]
 
-#[derive(Debug)]
-pub enum DecodingError {
-    /// An error in IO of the underlying reader.
-    IoError(io::Error),
 
-    UnknownError
-}
 
 
 #[derive(Debug)]
