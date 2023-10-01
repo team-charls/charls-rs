@@ -1,6 +1,7 @@
 // Copyright (c) Team CharLS.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use std::convert::TryFrom;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum JpegMarkerCode {
@@ -45,4 +46,17 @@ pub enum JpegMarkerCode {
     ApplicationData14 = 0xEE, // APP14: Application data 14: used by Adobe
     ApplicationData15 = 0xEF, // APP15: Application data 15.
     Comment = 0xFE             // COM:   Comment block.
+}
+
+impl TryFrom<u8> for JpegMarkerCode {
+    type Error = ();
+
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
+        match v {
+            x if x == JpegMarkerCode::StartOfImage as u8 => Ok(JpegMarkerCode::StartOfImage),
+            x if x == JpegMarkerCode::EndOfImage as u8 => Ok(JpegMarkerCode::EndOfImage),
+            x if x == JpegMarkerCode::StartOfScan as u8 => Ok(JpegMarkerCode::StartOfScan),
+            _ => Err(()),
+        }
+    }
 }

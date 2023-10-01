@@ -1,7 +1,7 @@
 // Copyright (c) Team CharLS.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::io::{Read, self};
+use std::io::{Read};
 
 #[warn(unused_variables)]
 
@@ -19,7 +19,7 @@ pub struct Decoder<R: Read> {
 
 
 impl<R: Read> Decoder<R> {
-    pub fn new(mut r: R) -> Decoder<R> {
+    pub fn new(r: R) -> Decoder<R> {
         let width = 0;
         let height = 0;
         let bits_per_sample = 0;
