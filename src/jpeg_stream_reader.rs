@@ -113,4 +113,59 @@ mod tests {
         let mut reader = JpegStreamReader::new(buffer.as_slice());
         assert!(reader.read_header().is_err());
     }
+
+    #[test]
+    fn read_header_from_buffer_preceded_with_fill_bytes() {
+        let mut buffer = Vec::new();
+
+        write_byte(&mut buffer, 0xFF);
+        write_start_of_image(&mut buffer);
+
+        // writer.write_byte(extra_start_byte);
+        // writer.write_start_of_frame_segment(1, 1, 2, 1);
+        //
+        // writer.write_byte(extra_start_byte);
+        // writer.write_start_of_scan_segment(0, 1, 1, interleave_mode::none);
+
+        let mut reader = JpegStreamReader::new(buffer.as_slice());
+        assert!(reader.read_header().is_ok());
+    }
+
+    fn write_byte(buffer: &mut Vec<u8>, value: u8) {
+        buffer.write_all(&[value]).unwrap();
+    }
+
+    fn write_start_of_image(buffer: &mut Vec<u8>) {
+        buffer.write_all(&[0xFF, 0xD8]).unwrap();
+    }
+
+    fn write_start_of_frame_segment(buffer: &mut Vec<u8>, width: u16, height: u16, bits_per_sample: u8,
+     component_count: u16) {
+        // Create a Frame Header as defined in T.87, C.2.2 and T.81, B.2.2
+        let mut segment = Vec::new();
+
+        write_byte(&mut segment, bits_per_sample); // P = Sample precision
+        // push_back(segment, static_cast<uint16_t>(height));          // Y = Number of lines
+        // push_back(segment, static_cast<uint16_t>(width));           // X = Number of samples per line
+        //
+        // // Components
+        // segment.push_back(static_cast<std::byte>(component_count)); // Nf = Number of image components in frame
+        // for (int component_id{}; component_id < component_count; ++component_id)
+        // {
+        //     // Component Specification parameters
+        //     if (componentIdOverride == 0)
+        //     {
+        //         segment.push_back(static_cast<std::byte>(component_id)); // Ci = Component identifier
+        //     }
+        //     else
+        //     {
+        //         segment.push_back(static_cast<std::byte>(componentIdOverride)); // Ci = Component identifier
+        //     }
+        //     segment.push_back(std::byte{0x11}); // Hi + Vi = Horizontal sampling factor + Vertical sampling factor
+        //     segment.push_back(
+        //         std::byte{0}); // Tqi = Quantization table destination selector (reserved for JPEG-LS, should be set to 0)
+        // }
+        //
+        // write_segment(jpeg_marker_code::start_of_frame_jpegls, segment.data(), segment.size());
+    }
 }
