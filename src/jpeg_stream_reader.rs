@@ -10,10 +10,10 @@ use crate::decoding_error::DecodingError;
 
 #[derive(Clone, Debug)]
 pub struct FrameInfo {
-    width:           u32,
-    height:          u32,
+    width: u32,
+    height: u32,
     bits_per_sample: u8,
-    component_count: u8
+    component_count: u8,
 }
 
 
@@ -27,7 +27,7 @@ enum ReaderState
     FrameSection,
     ScanSection,
     BitStreamSection,
-    AfterEndOfImage
+    AfterEndOfImage,
 }
 
 
@@ -35,7 +35,7 @@ enum ReaderState
 pub struct JpegStreamReader<R: Read> {
     reader: R,
     frame_info: FrameInfo,
-    state: ReaderState
+    state: ReaderState,
 }
 
 
@@ -52,9 +52,9 @@ impl<R: Read> JpegStreamReader<R> {
                 width,
                 height,
                 bits_per_sample,
-                component_count
+                component_count,
             },
-            state: ReaderState::BeforeStartOfImage
+            state: ReaderState::BeforeStartOfImage,
         }
     }
 
@@ -74,7 +74,7 @@ impl<R: Read> JpegStreamReader<R> {
             return Err(DecodingError::StartOfImageMarkerNotFound);
         }
 
-        return Ok(r.unwrap())
+        return Ok(r.unwrap());
     }
 
     pub fn read_header(&mut self) -> Result<(), DecodingError> {
@@ -112,5 +112,90 @@ mod tests {
 
         let mut reader = JpegStreamReader::new(buffer.as_slice());
         assert!(reader.read_header().is_err());
+    }
+
+    #[test]
+    fn read_header_from_buffer_preceded_with_fill_bytes() {
+        let extra_start_byte = 0xFFu8;
+        let mut buffer = Vec::new();
+
+        write_byte(&mut buffer, extra_start_byte);
+        write_start_of_image(&mut buffer);
+
+        write_byte(&mut buffer, extra_start_byte);
+        write_start_of_frame_segment(&mut buffer, 1, 1, 2, 1);
+
+        write_byte(&mut buffer, extra_start_byte);
+        write_start_of_scan_segment(&mut buffer, 0, 1, 1, 0);
+
+        let mut reader = JpegStreamReader::new(buffer.as_slice());
+        assert!(reader.read_header().is_ok());
+    }
+
+    fn write_byte(buffer: &mut Vec<u8>, value: u8) {
+        buffer.write_all(&[value]).unwrap();
+    }
+
+    fn write_u16(buffer: &mut Vec<u8>, value: u16) {
+        buffer.write_all(&value.to_be_bytes()).unwrap();
+    }
+
+    fn write_marker(buffer: &mut Vec<u8>, marker_code: JpegMarkerCode)
+    {
+        write_byte(buffer, 0xFF);
+        write_byte(buffer, marker_code as u8);
+    }
+
+    fn write_start_of_image(buffer: &mut Vec<u8>) {
+        buffer.write_all(&[0xFF, 0xD8]).unwrap();
+    }
+
+    fn write_start_of_frame_segment(buffer: &mut Vec<u8>, width: u16, height: u16, bits_per_sample: u8,
+                                    component_count: u16) {
+        // Create a Frame Header as defined in T.87, C.2.2 and T.81, B.2.2
+        let mut segment = Vec::new();
+
+        write_byte(&mut segment, bits_per_sample); // P = Sample precision
+        write_u16(&mut segment, height); // Y = Number of lines
+        write_u16(&mut segment, width); // X = Number of samples per line
+
+        // Components
+        write_byte(&mut segment, component_count as u8); // Nf = Number of image components in frame
+
+        for component_id in 0..component_count as u8 {
+            // Component Specification parameters
+            write_byte(&mut segment, component_id); // Ci = Component identifier
+            write_byte(&mut segment, 0x11); // Hi + Vi = Horizontal sampling factor + Vertical sampling factor
+            write_byte(&mut segment, 0); // Tqi = Quantization table destination selector (reserved for JPEG-LS, should be set to 0)
+        }
+
+        write_segment(buffer, JpegMarkerCode::StartOfFrameJpegls, &segment);
+    }
+
+    fn write_start_of_scan_segment(buffer: &mut Vec<u8>, component_id: u8, component_count: u8, near_lossless: u8,
+                                   interleave_mode: u8) {
+        // Create a Scan Header as defined in T.87, C.2.3 and T.81, B.2.3
+        let mut segment = Vec::new();
+
+        write_byte(&mut segment, component_count);
+        for component_id in 0..component_count {
+            write_byte(&mut segment, component_id);
+            write_byte(&mut segment, 0); // Mapping table selector (0 = no table)
+        }
+
+        write_byte(&mut segment, near_lossless); // NEAR parameter
+        write_byte(&mut segment, interleave_mode); // ILV parameter
+        write_byte(&mut segment, 0); // transformation
+
+        write_segment(buffer, JpegMarkerCode::StartOfScan, &segment);
+    }
+
+    fn write_segment(buffer: &mut Vec<u8>, marker_code: JpegMarkerCode, segment_data: &Vec<u8>)
+    {
+        buffer.write_all(&[0xFF, 0xD8]).unwrap();
+
+        write_marker(buffer, marker_code);
+        write_u16(buffer, (segment_data.len() + 2) as u16);
+        buffer.write_all(segment_data).unwrap();
     }
 }
