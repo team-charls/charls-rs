@@ -61,7 +61,7 @@ impl<R: Read> JpegStreamReader<R> {
     pub fn read_next_marker_code(&mut self) -> Result<JpegMarkerCode, DecodingError> {
         let mut value = self.read_u8()?;
         if value != 255 {
-            return Err(DecodingError::StartOfImageMarkerNotFound);
+            return Err(DecodingError::JpegMarkerStartByteNotFound);
         }
 
         // Read all preceding 0xFF fill values until a non 0xFF value has been found. (see ISO/IEC 10918-1, B.1.1.2)
@@ -132,6 +132,21 @@ mod tests {
         assert!(reader.read_header().is_ok());
     }
 
+    #[test]
+    fn read_header_from_buffer_not_starting_with_ff_throws() {
+        let mut buffer = Vec::new();
+        buffer.write_all(&[0x0F, 0xFF, 0xD8, 0xFF, 0xFF, 0xDA]).unwrap();
+
+        let mut reader = JpegStreamReader::new(buffer.as_slice());
+
+        let x = reader.read_header().unwrap_err();
+        assert_eq!(x, DecodingError::JpegMarkerStartByteNotFound);
+
+        //
+        // assert_expect_exception(jpegls_errc::jpeg_marker_start_byte_not_found, [&reader] { reader.read_header(); });
+    }
+
+
     fn write_byte(buffer: &mut Vec<u8>, value: u8) {
         buffer.write_all(&[value]).unwrap();
     }
@@ -178,8 +193,8 @@ mod tests {
         let mut segment = Vec::new();
 
         write_byte(&mut segment, component_count);
-        for component_id in 0..component_count {
-            write_byte(&mut segment, component_id);
+        for i in 0..component_count {
+            write_byte(&mut segment, component_id + i);
             write_byte(&mut segment, 0); // Mapping table selector (0 = no table)
         }
 
