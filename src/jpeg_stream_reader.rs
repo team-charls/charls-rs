@@ -146,6 +146,30 @@ mod tests {
         // assert_expect_exception(jpegls_errc::jpeg_marker_start_byte_not_found, [&reader] { reader.read_header(); });
     }
 
+    #[test]
+    fn read_header_with_application_data() {
+        for i in 0..16 {
+            //read_header_with_application_data(i);
+        }
+    }
+
+    fn read_header_with_application_data2(data_number: u8) {
+        // jpeg_test_stream_writer writer;
+        // writer.write_start_of_image();
+        //
+        // writer.write_byte(byte{0xFF});
+        // writer.write_byte(static_cast<byte>(0xE0 + data_number));
+        // writer.write_byte(byte{0x00});
+        // writer.write_byte(byte{0x02});
+        //
+        // writer.write_start_of_frame_segment(1, 1, 2, 1);
+        // writer.write_start_of_scan_segment(0, 1, 1, interleave_mode::none);
+        //
+        // jpeg_stream_reader reader;
+        // reader.source({writer.buffer.data(), writer.buffer.size()});
+        //
+        // reader.read_header(); // if it doesn't throw test is passed.
+    }
 
     fn write_byte(buffer: &mut Vec<u8>, value: u8) {
         buffer.write_all(&[value]).unwrap();
