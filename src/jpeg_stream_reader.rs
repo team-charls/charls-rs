@@ -141,11 +141,29 @@ mod tests {
 
         let x = reader.read_header().unwrap_err();
         assert_eq!(x, DecodingError::JpegMarkerStartByteNotFound);
-
-        //
-        // assert_expect_exception(jpegls_errc::jpeg_marker_start_byte_not_found, [&reader] { reader.read_header(); });
     }
 
+    #[test]
+    fn read_header_with_application_data() {
+        for i in 0..16 {
+            read_header_with_application_data_for(i);
+        }
+    }
+
+    fn read_header_with_application_data_for(data_number: u8) {
+        let mut buffer = Vec::new();
+
+        write_start_of_image(&mut buffer);
+        write_byte(&mut buffer, 0xFF);
+        write_byte(&mut buffer, 0xE0 + data_number);
+        write_byte(&mut buffer, 0);
+        write_byte(&mut buffer, 0x02);
+        write_start_of_frame_segment(&mut buffer, 1, 1, 2,1);
+        write_start_of_scan_segment(&mut buffer, 0, 1, 1, 0);
+
+        let mut reader = JpegStreamReader::new(buffer.as_slice());
+        assert!(reader.read_header().is_ok());
+    }
 
     fn write_byte(buffer: &mut Vec<u8>, value: u8) {
         buffer.write_all(&[value]).unwrap();
