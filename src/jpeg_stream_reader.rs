@@ -151,6 +151,21 @@ mod tests {
         }
     }
 
+    #[test]
+    fn read_header_with_jpegls_extended_frame_throws() {
+        // assert_expect_exception(jpegls_errc::encoding_not_supported, [&reader] { reader.read_header(); });
+
+        let mut buffer = Vec::new();
+        buffer.write_all(&[0xFF, 0xD8, 0xFF,
+            0xF9, // 0xF9 = SOF_57: Marks the start of a JPEG-LS extended (ISO/IEC 14495-2) encoded frame.
+            0xDA]).unwrap();
+
+        let mut reader = JpegStreamReader::new(buffer.as_slice());
+
+        let x = reader.read_header().unwrap_err();
+        assert_eq!(x, DecodingError::JpegMarkerStartByteNotFound);
+    }
+
     struct JpegTestStreamWriter {
         buffer: Vec<u8>,
     }

@@ -7,5 +7,6 @@ pub enum DecodingError {
     IoError,
     JpegMarkerStartByteNotFound,
     StartOfImageMarkerNotFound,
+    EncodingNotSupported,
     UnknownError
 }
